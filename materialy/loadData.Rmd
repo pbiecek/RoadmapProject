@@ -5,6 +5,11 @@ date: "14 March 2016"
 output: html_document
 ---
 
+
+Piers vs reszta
+
+
+
 ```{r, warning=FALSE, message=FALSE}
 library(dplyr)
 
@@ -21,9 +26,12 @@ wybrane <- as.matrix(wybrane)
 cds <- newCountDataSet(wybrane, conditions = c("Breast", "Breast", "Brain", "Brain"))
 
 cds <- estimateSizeFactors(cds)
+cds <- estimateDispersions(cds)
 sizeFactors(cds) 
 
-res <- nbinomTest(cds, c("E000", "E003"))
+res <- nbinomTest(cds, "Breast", "Brain")
 head(res)
 
+plotDispEsts(cds)
+plotMA(res)
 ```
