@@ -1,0 +1,15 @@
+---
+title: "read_data"
+author: "Kornel Kiełczewski"
+date: "14 March 2016"
+output: html_document
+---
+
+
+```{r}
+data <- read.delim('57epigenomes.N.pc', sep = '\t')
+tissue.list <- read.delim('samples', sep = '\t', header = F, col.names = c('name', 'desc'))
+
+filtered <- subset(data, select = tissue.list$name)
+```
+
