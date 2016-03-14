@@ -1,0 +1,15 @@
+---
+title: "Read data"
+author: "Przemyslaw Biecek"
+date: "14 March 2016"
+output: html_document
+---
+
+```{r}
+data <- read.table("../57epigenomes.N.pc", header = TRUE)
+samples <- read.table("../samples")
+
+wybrane <- data[,as.character(samples[,1])]
+
+head(wybrane)
+```
