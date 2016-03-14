@@ -5,11 +5,25 @@ date: "14 March 2016"
 output: html_document
 ---
 
-```{r}
-data <- read.table("../57epigenomes.N.pc", header = TRUE)
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
+
+data <- read.table("../57epigenomes.N.pc", header = TRUE, row.names = 1)
 samples <- read.table("../samples")
+samples <- filter(samples, grepl(V2, pattern="Breast|Brain"))
 
 wybrane <- data[,as.character(samples[,1])]
 
 head(wybrane)
+
+library(DESeq)
+wybrane <- as.matrix(wybrane)
+cds <- newCountDataSet(wybrane, conditions = c("Breast", "Breast", "Brain", "Brain"))
+
+cds <- estimateSizeFactors(cds)
+sizeFactors(cds) 
+
+res <- nbinomTest(cds, c("E000", "E003"))
+head(res)
+
 ```
