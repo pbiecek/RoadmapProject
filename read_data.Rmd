@@ -2,7 +2,9 @@
 title: "read_data"
 author: "Kornel Kiełczewski"
 date: "14 March 2016"
-output: html_document
+output: 
+  md_document:
+    variant: markdown_github
 ---
 
 ```{r, warning=F, message=F}
