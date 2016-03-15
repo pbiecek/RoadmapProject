@@ -5,11 +5,58 @@ date: "14 March 2016"
 output: html_document
 ---
 
-
-```{r}
-data <- read.delim('57epigenomes.N.pc', sep = '\t')
-tissue.list <- read.delim('samples', sep = '\t', header = F, col.names = c('name', 'desc'))
-
-filtered <- subset(data, select = tissue.list$name)
+```{r, warning=F, message=F}
+library(dplyr)
+library(DESeq)
+library(ggplot2)
+library(reshape2)
+library(plyr)
 ```
 
+```{r}
+data <- read.table('57epigenomes.N.pc', header = T, row.names = 1)
+
+x <- colnames(data) == 'E066'
+x[x == T] <- 'liver'
+x[x == F] <- 'other'
+
+head(data)
+```
+
+```{r}
+cds <- newCountDataSet(data, x)
+```
+
+```{r}
+if (file.exists('res.RData')) {
+  load('res.RData')
+} else {
+  cds <- estimateSizeFactors(cds)
+  sizeFactors(cds)
+  
+  cds <- estimateDispersions(cds)
+  plotDispEsts(cds)
+  
+  res <- nbinomTest(cds, 'liver', 'other')
+  save(res, file = 'res.RData')
+}
+head(res)
+```
+
+```{r, eval=TRUE}
+res.ordered <- res[order(res$padj),]
+top10 <- head(res.ordered, n = 10)
+top10
+```
+
+```{r, eval=T}
+top10.melt <- melt(top10, id.vars=c('id', 'baseMean', 'foldChange', 'log2FoldChange', 'pval', 'padj'))
+
+top10.melt$variable <- revalue(top10.melt$variable, c('baseMeanA' = 'mean liver', 'baseMeanB' = 'mean other'))
+
+ggplot(top10.melt, aes(x = id, y = value, fill = variable)) + 
+  geom_bar(position = 'dodge',  stat = 'identity') + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_log10()
+
+```
