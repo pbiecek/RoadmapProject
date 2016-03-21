@@ -13,6 +13,7 @@ library(DESeq)
 library(ggplot2)
 library(reshape2)
 library(plyr)
+library(vioplot)
 ```
 
 ```{r}
@@ -61,4 +62,15 @@ ggplot(top10.melt, aes(x = id, y = value, fill = variable)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_y_log10()
 
+```
+
+Vioplot:
+
+```{r}
+id <- top10$id[1]
+
+other.expr <- data[id,colnames(data) != 'E066']
+liver.expr <- data[id,colnames(data) == 'E066']
+
+vioplot(liver.expr, as.numeric(other.expr[1,]))
 ```
