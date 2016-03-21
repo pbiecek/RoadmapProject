@@ -1,0 +1,91 @@
+---
+title: "Dekompozycja na 4 klasy"
+author: "Przemyslaw Biecek"
+date: "18 March 2016"
+output: html_document
+---
+
+Podział na cztery grupy
+
+* fibroblasts (E055, E056)
+* blood cells: mononuclear cells (E062), T cells (E034, E045), B cells (E032), NK (E046), neutrophils (E030), monocytes (E029, E062)
+*endothelial cells (E122)
+* peripheral nerves (E054)
+
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
+
+data <- read.table("../57epigenomes.N.pc", header = TRUE, row.names = 1)
+#samples <- c("E055","E056","E062","E034","E045","E032","E046","E030","E029","E062","E122","E054")
+samples <- c("E055","E056","E061","E062","E122","E054")
+data4 <- data[,samples]
+names4 <- c(rep("fibroblasts",2), rep("blood",2), rep("endothelial",1), rep("nerves",1))
+
+head(data4)
+
+library(DESeq)
+cds <- newCountDataSet(data4, conditions = names4)
+
+cds <- estimateSizeFactors(cds)
+cds <- estimateDispersions(cds)
+sizeFactors(cds) 
+
+res <- nbinomTest(cds, "fibroblasts", "blood")
+head(res)
+
+plotDispEsts(cds)
+plotMA(res)
+
+# hist p-values
+hist(res[,8],100)
+```
+
+
+```{r}
+cutoff <- 10^-2
+selectedRows <- which(res[,"padj"] < cutoff &
+                  abs(res[,"log2FoldChange"]) > 1)
+
+boxplot(unlist(data4[selectedRows[1],])+1 ~ factor(names4), log="x", horizontal=T, las=1)
+boxplot(unlist(data4[selectedRows[2],])+1 ~ factor(names4), log="x", horizontal=T, las=1)
+boxplot(unlist(data4[selectedRows[3],])+1 ~ factor(names4), log="x", horizontal=T, las=1)
+boxplot(unlist(data4[selectedRows[4],])+1 ~ factor(names4), log="x", horizontal=T, las=1)
+
+```
+
+Wykonujemy dekompozycje innej tkanki, tylko po markerach
+
+```{r}
+head(data4[selectedRows,])
+
+model <- lm(E000 ~ E055 + E056 + E061 + E062 + E122 + E054-1, 
+   data=data[selectedRows,])
+summary(model)
+```
+
+Bez wyboru wierszy
+
+```{r}
+model <- lm(E000 ~ E055 + E056 + E061 + E062 + E122 + E054-1, 
+   data=data)
+summary(model)
+```
+
+
+Regularyzacja L1 tylko na wybranych wierszach
+
+```{r}
+library(penalized)
+
+fit <- penalized(data[selectedRows,1], data4[selectedRows,], lambda1=1,
+steps=50, trace = FALSE)
+plotpath(fit, log="x")
+```
+
+Bez wyboru wierszy
+
+```{r}
+fit <- penalized(data[,1], data4, lambda1=1,
+steps=50, trace = FALSE)
+plotpath(fit, log="x")
+```
