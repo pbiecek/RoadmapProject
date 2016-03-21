@@ -46,6 +46,18 @@ if (file.exists('res.RData')) {
 head(res)
 ```
 
+
+Linear model
+
+```{r}
+other.cols <- setdiff(colnames(data), c('E000', 'E066'))
+data$other <- rowMeans(data[,other.cols])
+fit <- lm(data = data, formula = E000 ~ E066 + other - 1)
+summary(fit)
+plot(fit)
+```
+
+
 ```{r, eval=TRUE}
 res.ordered <- res[order(res$padj),]
 top10 <- head(res.ordered, n = 10)
