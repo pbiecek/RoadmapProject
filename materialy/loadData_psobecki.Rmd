@@ -1,0 +1,93 @@
+---
+title: "Read data"
+author: "Piotr Sobecki"
+date: "14 March 2016"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Setup
+
+```{r}
+confidence_level = 0.05
+input_data_file = "57epigenomes.N.pc"
+selected_samples_file = "samples"
+
+gr1 = "Lung"
+gr2 = "*"
+```
+
+
+
+#Select tissue subset
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
+
+data <- read.table(input_data_file, header = TRUE, row.names = 1)
+
+samples <- read.table(selected_samples_file)
+samples <- filter(samples, grepl(V2, pattern=paste(gr1,"|",gr2,sep="")))
+
+wybrane <- data[,as.character(samples[,1])]
+
+head(wybrane)
+
+wybrane <- as.matrix(wybrane)
+
+```
+
+
+
+
+#NBINOM Test 
+
+```{r, warning=FALSE, message=FALSE}
+
+library(DESeq)
+
+
+#Get tissue names based on tissue identifiers in data
+conds <- filter(samples, V1 == colnames(wybrane))$V2
+
+#Assign tissue names to groups
+conds <- ifelse(grepl(conds,pattern=gr1),gr1,gr2)
+
+
+cds <- newCountDataSet(wybrane, conditions = conds)
+
+cds <- estimateSizeFactors(cds)
+cds <- estimateDispersions(cds)
+sizeFactors(cds) 
+
+res <- nbinomTest(cds, gr1, gr2)
+head(res)
+
+plotDispEsts(cds)
+plotMA(res)
+```
+
+#Results
+
+```{r, warning=FALSE, message=FALSE}
+
+
+plot(res$padj,rownames(res))
+
+b_predictors <- subset(res,res$padj<confidence_level)
+b_predictors <- b_predictors[order(b_predictors$padj,decreasing = FALSE),]
+
+plot(b_predictors$padj,rownames(b_predictors))
+
+b_predictors_reads <- wybrane[match(b_predictors$id,rownames(wybrane)),]
+
+print(conds)
+print(b_predictors)
+print(b_predictors_reads)
+
+
+```
