@@ -1,0 +1,102 @@
+---
+title: "cellmix.test"
+author: "Piotr Sobecki"
+date: "10 kwietnia 2016"
+output: html_document
+---
+
+
+
+#Install BiocInstaller and CellMix
+
+```{r}
+
+
+# install biocLite if not already there
+if( !require(BiocInstaller) ){
+    # enable Bioconductor repositories
+    # -> add Bioc-software
+    setRepositories() 
+
+    install.packages('BiocInstaller')
+    library(BiocInstaller)
+}
+
+if( !require(CellMix) ){
+    # or alternatively do: 
+  # source('http://www.bioconductor.org/biocLite.R')
+  
+  # install (NB: this might ask you to update some of your packages)
+  biocLite('CellMix', siteRepos = 'http://web.cbio.uct.ac.za/~renaud/CRAN', type='both')
+  library(CellMix)
+}
+
+if ( !require(GEOquery) ){
+
+  biocLite('GEOquery')
+
+  library(GEOquery)
+    
+}
+
+```
+
+
+#Load dataset
+```{r}
+
+
+
+# Dataset: GSE19830 [Shen-Orr et al. (2010)]
+GSE19830 <- getGEO("GSE19830")[[1]]
+levels(GSE19830$characteristics_ch1)
+
+# Dataset: GSE5350 (MACQ project) [HUMAN]
+GSE5350 <- getGEO("GSE5350")[[1]]
+# extract Affy Human dataset (i.e. GEO platform GPL570)
+i <- grep("GPL570", attr(GSE5350, "names"))
+GSE5350 <- GSE5350[[i]]
+# extract only mixture experiments
+GSE5350[, grep("^MAQC", GSE5350$source_name_ch1)]
+levels(droplevels(GSE5350$source_name_ch1))
+
+
+
+
+
+## load data
+emix <- ExpressionMix("GSE11058")
+## get relevant sample annotation cell type
+emix$Type
+## [1] Jurkat Jurkat Jurkat IM-9 IM-9 IM-9 Raji Raji Raji THP-1
+## [11] THP-1 THP-1 MixA MixA MixA MixB MixB MixB MixC MixC
+## [21] MixC MixD MixD MixD
+## Levels: IM-9 Jurkat MixA MixB MixC MixD Raji THP-1
+# cell type of origin
+emix$CType
+## [1] T T T B B B B
+## [8] B B Monocyte Monocyte Monocyte MixA MixA
+## [15] MixA MixB MixB MixB MixC MixC MixC
+## [22] MixD MixD MixD
+## Levels: B MixA MixB MixC MixD Monocyte T
+## get the reference mixing proportions
+coef(emix)[, c(1, 4, 7, 13:15)]
+## GSM279589 GSM279592 GSM279595 GSM279601 GSM279602 GSM279603
+## Jurkat 1 0 0 0.250 0.250 0.250
+## IM-9 0 1 0 0.125 0.125 0.125
+## Raji 0 0 1 0.250 0.250 0.250
+## THP-1 0 0 0 0.375 0.375 0.375
+## get the reference cell-type specific signatures
+head(basis(emix), 3)
+## Jurkat IM-9 Raji THP-1
+## 1007_s_at 341.7 339 1444.0 209.6
+## 1053_at 1997.5 2377 903.1 1488.6
+## 117_at 153.6 325 173.6 201.9
+
+
+
+```
+
+
+
+
