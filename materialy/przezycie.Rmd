@@ -1,0 +1,45 @@
+---
+title: "Analiza przeżycia"
+author: "Przemyslaw Biecek"
+date: "9 May 2016"
+output: html_document
+---
+
+Na danych z TCGA wykonamy analizę przeżycia.
+
+```{r setup, include=FALSE}
+library(RTCGA.PANCAN12, lib.loc = "/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
+
+clinical <- clinical.cb[clinical.cb$X_cohort == "TCGA Breast Cancer",c("X_PATIENT", "X_TIME_TO_EVENT", "X_EVENT")]
+clinical$X_PATIENT <- substr((clinical$X_PATIENT), 1, 12)
+clinical$X_PATIENT <- gsub(clinical$X_PATIENT, pattern="-", replacement=".")
+
+head(clinical$X_PATIENT)
+
+# expression
+expression <- rbind(expression.cb1, expression.cb2)
+rownames(expression) <- expression[,1]
+expression <- expression[,-1]
+expression <- t(expression)
+expression <- as.data.frame(expression)
+expression$X_PATIENT <- substr(rownames(expression), 1, 12)
+expression$X_PATIENT <- gsub(expression$X_PATIENT, pattern="-", replacement=".")
+
+head(expression$X_PATIENT)
+
+# mutation
+clinical_expression <- merge(clinical, expression[,c("X_PATIENT", "MDM2")],  by="X_PATIENT", all.x=TRUE)
+
+clinical_expression$MDM2bin <- cut(clinical_expression$MDM2, c(-100,0,100), c("low", "high"))
+
+library(ggplot2)
+library(survminer)
+library(survival)
+
+model <- survfit(Surv(X_TIME_TO_EVENT,X_EVENT) ~ MDM2bin, data=clinical_expression)
+ggsurvplot(model)
+
+survdiff(Surv(X_TIME_TO_EVENT,X_EVENT) ~ MDM2bin, data=clinical_expression)
+
+```
+
