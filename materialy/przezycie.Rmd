@@ -8,7 +8,8 @@ output: html_document
 Na danych z TCGA wykonamy analizę przeżycia.
 
 ```{r setup, include=FALSE}
-library(RTCGA.PANCAN12, lib.loc = "/Library/Frameworks/R.framework/Versions/3.2/Resources/library")
+library(RTCGA.PANCAN12)
+
 
 clinical <- clinical.cb[clinical.cb$X_cohort == "TCGA Breast Cancer",c("X_PATIENT", "X_TIME_TO_EVENT", "X_EVENT")]
 clinical$X_PATIENT <- substr((clinical$X_PATIENT), 1, 12)
@@ -27,19 +28,32 @@ expression$X_PATIENT <- gsub(expression$X_PATIENT, pattern="-", replacement=".")
 
 head(expression$X_PATIENT)
 
-# mutation
-clinical_expression <- merge(clinical, expression[,c("X_PATIENT", "MDM2")],  by="X_PATIENT", all.x=TRUE)
+plot(expression$HSPA1A,expression$DNAJB1, pch=".")
+hist(expression$DNAJB1,100)
 
-clinical_expression$MDM2bin <- cut(clinical_expression$MDM2, c(-100,0,100), c("low", "high"))
+# mutation
+clinical_expression <- merge(clinical, expression[,c("X_PATIENT", "DNAJB1")],  by="X_PATIENT", all.x=TRUE)
+
+clinical_expression$MDM2bin <- cut(clinical_expression$DNAJB1, c(-100,0,100), c("low", "high"))
+
+
+plot(clinical_expression$DNAJB1, clinical_expression$X_TIME_TO_EVENT, pch=".")
 
 library(ggplot2)
 library(survminer)
 library(survival)
 
+model <- survfit(Surv(X_TIME_TO_EVENT,X_EVENT) ~ 1, data=clinical_expression)
+ggsurvplot(model)
+
 model <- survfit(Surv(X_TIME_TO_EVENT,X_EVENT) ~ MDM2bin, data=clinical_expression)
 ggsurvplot(model)
 
 survdiff(Surv(X_TIME_TO_EVENT,X_EVENT) ~ MDM2bin, data=clinical_expression)
+
+str(survdiff(Surv(X_TIME_TO_EVENT,X_EVENT) ~ MDM2bin, data=clinical_expression))
+
+pchisq(survdiff(Surv(X_TIME_TO_EVENT,X_EVENT) ~ MDM2bin, data=clinical_expression)$chisq, 1, lower.tail = F)
 
 ```
 
