@@ -11,9 +11,12 @@ Na danych z TCGA wykonamy analizę przeżycia.
 library(RTCGA.PANCAN12)
 
 
-clinical <- clinical.cb[clinical.cb$X_cohort == "TCGA Breast Cancer",c("X_PATIENT", "X_TIME_TO_EVENT", "X_EVENT")]
+clinical <- clinical.cb[clinical.cb$X_cohort == "TCGA Breast Cancer",c("X_PATIENT", "X_TIME_TO_EVENT", "X_EVENT", "gender", "age_at_initial_pathologic_diagnosis")]
 clinical$X_PATIENT <- substr((clinical$X_PATIENT), 1, 12)
 clinical$X_PATIENT <- gsub(clinical$X_PATIENT, pattern="-", replacement=".")
+
+clinical <- clinical[clinical$gender != "", ]
+clinical$gender <- factor(clinical$gender)
 
 head(clinical$X_PATIENT)
 
@@ -54,6 +57,25 @@ survdiff(Surv(X_TIME_TO_EVENT,X_EVENT) ~ MDM2bin, data=clinical_expression)
 str(survdiff(Surv(X_TIME_TO_EVENT,X_EVENT) ~ MDM2bin, data=clinical_expression))
 
 pchisq(survdiff(Surv(X_TIME_TO_EVENT,X_EVENT) ~ MDM2bin, data=clinical_expression)$chisq, 1, lower.tail = F)
+
+
+# model proporcjonalnych hazardow coxa
+
+clinical_expression$age <- cut(clinical_expression$age_at_initial_pathologic_diagnosis, c(0,50,60,100), labels = c("<50", "50-60", ">60"))
+
+modelc <- coxph(Surv(X_TIME_TO_EVENT,X_EVENT) ~ MDM2bin + age, data=clinical_expression)
+
+modelc
+
+summary(modelc)
+
+(modeltest <- cox.zph(modelc))
+
+plot(modeltest)
+
+library(rms)
+
+survplot(modeltest)
 
 ```
 
